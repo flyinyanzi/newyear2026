@@ -394,8 +394,11 @@ function triggerEffect_02(){
     };
   });
 
-  // 画一个“雌鹿轮廓”（用简单路径拟形：头、颈、背、腿）
-  // 这不是电影级建模，但视觉上会像“银蓝色光之鹿”
+  // 背景变蓝
+  document.body.style.background =
+  "radial-gradient(1200px 700px at 60% 30%, #1a2e5a, #06070f)";
+
+  // ===== “银蓝色光之牝鹿”建模 start =====
   function drawDoeOutline(x, y, s, glow, breathe){
     ctx.save();
     ctx.translate(x, y);
@@ -403,76 +406,69 @@ function triggerEffect_02(){
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
-    const alpha = 0.9;
-    ctx.globalAlpha = alpha;
+    const GLOW_COLOR = `rgba(200,240,255,${0.9 * glow})`;
 
-    // 外发光
-    ctx.strokeStyle = `rgba(200,240,255,${0.30*glow})`;
+    // ===== 外发光轮廓 =====
+    ctx.strokeStyle = GLOW_COLOR;
     ctx.lineWidth = 18;
-    ctx.shadowColor = `rgba(170,230,255,${0.85*glow})`;
-    ctx.shadowBlur = 30;
+    ctx.shadowColor = "rgba(180,230,255,0.85)";
+    ctx.shadowBlur = 32;
+
     ctx.beginPath();
 
-    // 一笔画的简化轮廓（抽象但像鹿）
-    ctx.moveTo(-120, 20);          // 尾部
-    ctx.quadraticCurveTo(-40, -10, 30, -20);   // 背
-    ctx.quadraticCurveTo(80, -25, 110, -10);   // 肩
-    ctx.quadraticCurveTo(135, 5, 140, 35);     // 胸前
-    ctx.quadraticCurveTo(145, 70, 120, 85);    // 前腿上
-    ctx.quadraticCurveTo(105, 95, 95, 130);    // 前腿下
-    ctx.quadraticCurveTo(85, 165, 70, 170);    // 蹄
-    ctx.moveTo(105, 85);
-    ctx.quadraticCurveTo(88, 105, 88, 135);
-    ctx.quadraticCurveTo(88, 168, 102, 170);
+    // 身体
+    ctx.moveTo(-150, 30);
+    ctx.quadraticCurveTo(-60, 0, 40, -10);
+    ctx.quadraticCurveTo(100, -20, 140, 10);
 
-    // 颈与头
-    ctx.moveTo(125, 40);
-    ctx.quadraticCurveTo(130, 10, 115, -35);   // 颈
-    ctx.quadraticCurveTo(95, -70, 60, -80);    // 头部轮廓
-    ctx.quadraticCurveTo(30, -88, 10, -70);    // 口鼻
-    ctx.quadraticCurveTo(28, -58, 45, -58);    // 下颌
-    ctx.quadraticCurveTo(80, -58, 92, -40);    // 回到颈
+    // 胸口 → 前腿
+    ctx.quadraticCurveTo(160, 40, 140, 80);
+    ctx.quadraticCurveTo(130, 110, 115, 150);
+    ctx.quadraticCurveTo(105, 180, 90, 185);
+
+    // 后腿（错位）
+    ctx.moveTo(-40, 70);
+    ctx.quadraticCurveTo(-45, 120, -40, 160);
+    ctx.quadraticCurveTo(-35, 185, -20, 188);
+
+    // 颈
+    ctx.moveTo(120, 30);
+    ctx.quadraticCurveTo(140, -40, 110, -95);
+
+    // 头部
+    ctx.quadraticCurveTo(80, -135, 40, -140);
+    ctx.quadraticCurveTo(0, -145, -10, -120);
+    ctx.quadraticCurveTo(10, -115, 30, -115);
+
+    // 耳朵
+    ctx.moveTo(60, -140);
+    ctx.quadraticCurveTo(70, -175, 90, -185);
+    ctx.moveTo(40, -138);
+    ctx.quadraticCurveTo(45, -170, 60, -178);
+
     ctx.stroke();
 
-    // 内描边（更亮）
+    // ===== 内细线（增强结构感）=====
     ctx.shadowBlur = 0;
-    ctx.strokeStyle = `rgba(235,255,255,${0.95*glow})`;
     ctx.lineWidth = 2.2;
-    ctx.beginPath();
-    ctx.moveTo(-120, 20);
-    ctx.quadraticCurveTo(-40, -10, 30, -20);
-    ctx.quadraticCurveTo(80, -25, 110, -10);
-    ctx.quadraticCurveTo(135, 5, 140, 35);
-    ctx.quadraticCurveTo(145, 70, 120, 85);
-    ctx.quadraticCurveTo(105, 95, 95, 130);
-    ctx.quadraticCurveTo(85, 165, 70, 170);
-    ctx.moveTo(105, 85);
-    ctx.quadraticCurveTo(88, 105, 88, 135);
-    ctx.quadraticCurveTo(88, 168, 102, 170);
-
-    ctx.moveTo(125, 40);
-    ctx.quadraticCurveTo(130, 10, 115, -35);
-    ctx.quadraticCurveTo(95, -70, 60, -80);
-    ctx.quadraticCurveTo(30, -88, 10, -70);
-    ctx.quadraticCurveTo(28, -58, 45, -58);
-    ctx.quadraticCurveTo(80, -58, 92, -40);
+    ctx.strokeStyle = "rgba(240,255,255,0.95)";
     ctx.stroke();
 
-    // 呼吸起伏（轻微）
+    // ===== 呼吸光（胸腔）=====
     if(breathe){
-      // 在胸口附近加一点淡淡光
-      ctx.globalAlpha = 0.35 * glow;
-      const rg = ctx.createRadialGradient(120, 35, 2, 120, 35, 60);
-      rg.addColorStop(0, "rgba(210,250,255,0.85)");
+      const r = 70 + Math.sin(performance.now()/260)*6;
+      const rg = ctx.createRadialGradient(120, 45, 0, 120, 45, r);
+      rg.addColorStop(0, "rgba(210,250,255,0.7)");
       rg.addColorStop(1, "rgba(210,250,255,0)");
       ctx.fillStyle = rg;
       ctx.beginPath();
-      ctx.arc(120, 35, 60, 0, Math.PI*2);
+      ctx.arc(120, 45, r, 0, Math.PI * 2);
       ctx.fill();
     }
 
     ctx.restore();
   }
+  // ===== “银蓝色光之牝鹿”建模 end =====
 
   function frame(t){
     const elapsed = t - start;
