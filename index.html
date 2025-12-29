@@ -206,6 +206,7 @@
   const TRIGGER_TEXT_01 = "他变成了一颗星星，会永远在夜空中闪耀";
   const TRIGGER_TEXT_02 = "祝愿你在黑暗的魔法世界里能用“呼神护卫”为自己召唤出一头神秘而温暖的牝鹿";
   const TRIGGER_TEXT_03 = "祝愿你不用时刻坚强，也可以在长夜与黎明里守住一窗月光";
+  const TRIGGER_TEXT_04 = "祝愿你每天都能看到蓝天白云以及壮丽的日落";
 
 
   // 最后一封长信（字数不限制）
@@ -808,6 +809,141 @@ function triggerEffect_03(){
 
   requestAnimationFrame(frame);
 }
+
+// ===== Effect 04：画面被染晚霞日落 =====
+function triggerEffect_04(){
+  if(EFFECT_LOCK) return;
+  EFFECT_LOCK = true;
+
+  FX.c.classList.add("on-top");
+
+  const ctx = FX.ctx;
+  const W = window.innerWidth, H = window.innerHeight;
+
+  const start = performance.now();
+  const durIn = 1200;    // 晚霞铺开 + 太阳出现
+  const durHold = 1200;  // 停留
+  const durOut = 900;    // 淡出
+  const total = durIn + durHold + durOut;
+
+  function easeOutCubic(t){ return 1 - Math.pow(1-t, 3); }
+  function easeInOut(t){
+    return t<0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2;
+  }
+
+  // 太阳位置（从中间偏上，缓慢落到地平线附近）
+  const sunX = W * 0.5;
+  const horizonY = H * 0.62;         // 地平线
+  const sunR = Math.min(W, H) * 0.09;
+
+  function frame(now){
+    const elapsed = now - start;
+
+    // 进/停/出 的整体透明度 a
+    let a;
+    if(elapsed < durIn) a = easeOutCubic(elapsed/durIn);
+    else if(elapsed < durIn + durHold) a = 1;
+    else a = 1 - easeOutCubic((elapsed - durIn - durHold)/durOut);
+    a = Math.max(0, Math.min(1, a));
+
+    FX.clear();
+
+    // ===== 1) 满屏晚霞染色（橘/粉/紫渐变）=====
+    // 用一个从上到下的渐变，再叠一点中心光晕
+    ctx.globalAlpha = 0.92 * a;
+    const sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0.00, "rgba(255,165,90,0.85)");  // 橘
+    sky.addColorStop(0.35, "rgba(255,120,120,0.55)"); // 粉橘
+    sky.addColorStop(0.70, "rgba(255,90,140,0.28)");  // 玫红
+    sky.addColorStop(1.00, "rgba(120,80,160,0.18)");  // 紫暮
+    ctx.fillStyle = sky;
+    ctx.fillRect(0,0,W,H);
+
+    // 中心“霞光爆开”
+    ctx.globalAlpha = 0.65 * a;
+    const bloom = ctx.createRadialGradient(W*0.5, H*0.42, 10, W*0.5, H*0.42, Math.max(W,H)*0.75);
+    bloom.addColorStop(0, "rgba(255,220,160,0.55)");
+    bloom.addColorStop(0.35, "rgba(255,170,120,0.25)");
+    bloom.addColorStop(1, "rgba(255,170,120,0)");
+    ctx.fillStyle = bloom;
+    ctx.fillRect(0,0,W,H);
+
+    // ===== 2) 地平线（薄雾）=====
+    ctx.globalAlpha = 0.55 * a;
+    const haze = ctx.createLinearGradient(0, horizonY-120, 0, horizonY+120);
+    haze.addColorStop(0, "rgba(255,230,190,0)");
+    haze.addColorStop(0.5, "rgba(255,230,190,0.22)");
+    haze.addColorStop(1, "rgba(255,230,190,0)");
+    ctx.fillStyle = haze;
+    ctx.fillRect(0, horizonY-120, W, 240);
+
+    // ===== 3) 太阳下沉（关键）=====
+    // sunY：从稍高处缓慢落到 horizonY
+    const fallP = easeInOut(Math.min(1, elapsed/(durIn+durHold))); // 下沉进度（进+停）
+    const sunYStart = H*0.46;
+    const sunY = sunYStart + (horizonY - sunYStart) * fallP;
+
+    // 太阳本体（柔边缘）
+    ctx.globalAlpha = 0.95 * a;
+    const sunGrad = ctx.createRadialGradient(sunX, sunY, sunR*0.2, sunX, sunY, sunR*1.6);
+    sunGrad.addColorStop(0, "rgba(255,255,245,0.98)");
+    sunGrad.addColorStop(0.35, "rgba(255,235,170,0.85)");
+    sunGrad.addColorStop(1, "rgba(255,200,120,0)");
+    ctx.fillStyle = sunGrad;
+    ctx.beginPath();
+    ctx.arc(sunX, sunY, sunR*1.6, 0, Math.PI*2);
+    ctx.fill();
+
+    // 太阳核心
+    ctx.globalAlpha = 0.92 * a;
+    ctx.fillStyle = "rgba(255,245,220,0.9)";
+    ctx.beginPath();
+    ctx.arc(sunX, sunY, sunR, 0, Math.PI*2);
+    ctx.fill();
+
+    // ===== 4) “日落切线”遮罩：让太阳像沉到地平线里 =====
+    // 用 destination-out 在地平线下掏掉太阳下半部分（随着 fallP 增加掏得更多）
+    ctx.save();
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.globalAlpha = 1;
+    const cutY = horizonY - (1 - fallP) * (sunR*0.65); // 初期切得少，后期切得多
+    ctx.fillStyle = "rgba(0,0,0,1)";
+    ctx.fillRect(0, cutY, W, H - cutY);
+    ctx.restore();
+
+    // ===== 5) 水平光带（很“日落”）=====
+    ctx.globalAlpha = 0.35 * a;
+    const band = ctx.createLinearGradient(0, horizonY-8, 0, horizonY+8);
+    band.addColorStop(0, "rgba(255,255,255,0)");
+    band.addColorStop(0.5, "rgba(255,240,210,0.55)");
+    band.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = band;
+    ctx.fillRect(0, horizonY-16, W, 32);
+
+    // ===== 6) 少量颗粒（让晚霞更有质感）=====
+    ctx.globalAlpha = 0.10 * a;
+    for(let i=0;i<140;i++){
+      const x = Math.random()*W;
+      const y = Math.random()*H;
+      const r = Math.random()*1.4 + 0.2;
+      ctx.fillStyle = "rgba(255,255,255,1)";
+      ctx.beginPath();
+      ctx.arc(x,y,r,0,Math.PI*2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    if(elapsed < total){
+      requestAnimationFrame(frame);
+    }else{
+      FX.clear();
+      FX.c.classList.remove("on-top");
+      EFFECT_LOCK = false;
+    }
+  }
+
+  requestAnimationFrame(frame);
+}
 // ===== Effect End =====
   
 function createPopup({text, kind="small"}){
@@ -870,6 +1006,7 @@ function createPopup({text, kind="small"}){
       if(text === TRIGGER_TEXT_01) triggerEffect_01();
       if(text === TRIGGER_TEXT_02) triggerEffect_02();
       if(text === TRIGGER_TEXT_03) triggerEffect_03();
+      if(text === TRIGGER_TEXT_04) triggerEffect_04();
     }
     el.remove();
   });
