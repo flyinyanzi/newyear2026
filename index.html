@@ -725,7 +725,23 @@ function triggerEffect_03(){
 
     FX.clear();
 
-    // 背景“月光点亮”：一个从右上角扩散的蓝白光晕 + 整体提亮
+    // ===== 整体压暗 =====
+    let darkAlpha;
+    if(elapsed < durIn){
+      darkAlpha = easeOutCubic(elapsed / durIn);
+    }else if(elapsed < durIn + durHold){
+      darkAlpha = 1;
+    }else{
+      darkAlpha = 1 - easeOutCubic((elapsed - durIn - durHold) / durOut);
+    }
+
+    // 暗色覆盖层
+    ctx.globalAlpha = 0.45 * darkAlpha;   // ← 数值可调（0.35~0.55）
+    ctx.fillStyle = "rgba(0,0,0,1)";
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = 1;
+
+    // ===== 背景“月光点亮”：一个从右上角扩散的蓝白光晕 + 整体提亮 =====
     let a;
     if(elapsed < durIn){
       a = easeOutCubic(elapsed/durIn);
