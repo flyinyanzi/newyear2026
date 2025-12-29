@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Popups + Long Letter</title>
+  <style>
+    html, body { height: 100%; }
+    body{
+      margin:0;
+      overflow:hidden;
+      background: radial-gradient(1200px 700px at 60% 25%, #2b2f3a, #0d0f14);
+      font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+      isolation: isolate;
+    }
+
+    /* 通用弹窗 */
+    .popup{
+      position:absolute;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.26);
+      box-shadow: 0 18px 40px rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
+      user-select:none;
+      overflow:hidden;
+      transform-origin: 30% 30%;
+    }
+
+    .bar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding: 10px 10px 8px 12px;
+      cursor: grab;
+      border-bottom: 1px solid rgba(255,255,255,.18);
+      background: linear-gradient(to bottom, rgba(255,255,255,.16), rgba(255,255,255,.04));
+    }
+    .title{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size: 12px;
+      opacity:.92;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width: 72%;
+      color: rgba(20,20,20,.86);
+    }
+    .dot{
+      width:9px;height:9px;border-radius:50%;
+      background: rgba(20,20,20,.28);
+      box-shadow: 0 0 0 2px rgba(255,255,255,.30) inset;
+      flex: 0 0 auto;
+    }
+    .close{
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,.24);
+      background: rgba(255,255,255,.18);
+      color: rgba(20,20,20,.75);
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size: 16px;
+      line-height: 1;
+    }
+    .close:hover{ background: rgba(255,255,255,.30); }
+
+    .content{
+      padding: 10px 12px 12px 12px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: rgba(20,20,20,.86);
+      user-select:text;
+      white-space: pre-wrap;      /* 自动换行 + 支持 \n */
+      word-break: break-word;     /* 避免长单词撑爆 */
+    }
+
+    /* 短弹窗 */
+    .popup.small{ width: 280px; }
+    .popup.small .content{ max-height: 120px; overflow:auto; }
+
+    /* 长信窗（大，滚动，不限字数） */
+    .popup.letter{
+      width: min(720px, calc(100vw - 24px));
+      height: min(78vh, 680px);
+    }
+    .popup.letter .content{
+      height: calc(100% - 52px);
+      overflow:auto;
+      font-size: 15px;
+      line-height: 1.75;
+      padding: 18px 18px 18px 18px;
+    }
+
+    /* 滚动条（可选） */
+    .content::-webkit-scrollbar{ width: 10px; }
+    .content::-webkit-scrollbar-thumb{
+      background: rgba(0,0,0,.12);
+      border-radius: 99px;
+      border: 2px solid rgba(255,255,255,.55);
+    }
+
+    /* 弹出动画 + 轻微抖动 */
+    .pop-in{
+      animation: popIn .22s ease-out forwards, jitter 1.8s ease-in-out infinite;
+      transform: translateY(10px) scale(.98);
+      opacity: 0;
+    }
+    @keyframes popIn{
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes jitter{
+      0%,100% { translate: 0 0; }
+      50% { translate: 0.6px -0.6px; } /* 很轻的抖动 */
+    }
+
+    /* 长信更像漂浮底稿 */
+    .floaty{
+      animation: popIn .22s ease-out forwards, float 3.2s ease-in-out infinite;
+      transform: translateY(10px) scale(.98);
+      opacity: 0;
+    }
+    @keyframes float{
+      0%,100% { transform: translateY(0) scale(1); }
+      50%     { transform: translateY(-6px) scale(1); }
+    }
+
+    .hint{
+      position: fixed;
+      left: 12px;
+      bottom: 12px;
+      font-size: 12px;
+      opacity: .55;
+      color: #fff;
+      user-select:none;
+    }
+  </style>
+</head>
+<body>
+  <div class="hint">短句：随机顺序且不重复｜长信：最底层｜都可拖拽/关闭</div>
+  <canvas id="stars"></canvas>
+
+<script>
+  // ========= 你主要改这里：短句 & 长信 =========
+
+  // 柔和色（粉/蓝/绿）
+  const pastel = [
+    "#ffe0ea", "#ffd9f2", "#ffe9d2", "#fff4cc",
+    "#dff7ff", "#d9e8ff", "#e6ddff",
+    "#d9ffe9", "#dfffe0", "#e8fff7"
+  ];
+
+  // 约 30 条短句（随机顺序，但每条只出现一次）
+  const shortMsgs = [
+    "我在清晨闹钟醒来时想你，有时以为还和你打着电话",
+    "好好爱自己",
+    "我在高峰期的地铁里想你，不知道你每天上下班路上累不累",
+    "别总熬夜哦(ง•̀ω•́)ง",
+    "希望你天天开心",
+    "希望你工作顺利",
+    "希望你下班后不会遭到上司的短信轰炸",
+    "我在上班的间隙想你，也在工作忙的时候突然想起你",
+    "我在午休的时候不知道吃什么了，这里的便利店是我两年前熟悉的，但是我现在其实熟悉了中午和你分享一下我这里有什么吃的，再来选择自己要吃什么。那么我没有你了，我要吃什么呢",
+    "希望你每个中午都有好好吃饭",
+    "我在下午犯困的时候想你，其实之前也会犯困，但看到了你的消息，自己总会打起一些精神",
+    "我在下班的时候想你，今天的你有没有按时下班呢，下班后有没有遭遇上司的电话轰炸呢",
+    "我在下班后喝酒的时候想起你，你放心，我没有喝很多，因为你对我说“天冷了不要喝太多酒比较好”",
+    "我在洗澡的时候想你，如果你知道我在洗澡，又会想出什么新的让我羞耻又想做的动作呢",
+    "我好像从来没有刻意想起你，而是你总会出现在我的日常场景中，你的存在已经融入了我的生活",
+    "要好好吃午饭，即使食堂的饭菜不好吃也要注意补充营养呢",
+    "天气冷了就少吃冰淇淋和冰奶茶，小心胃不舒服呀。不过如果它们能让你开心那就吃吧",
+    "夜里睡觉记得盖好被子哦，别着凉",
+    "姨妈期间也别喝凉的啦，多喝点温热滋补的",
+    "喝水接力！工作忙的时候也记得多喝水哦",
+    "注意天气变化，记得增添衣物，别感冒了",
+    "冬天干燥的话记得用护手霜身体乳哦",
+    "他变成了一颗星星，会永远在夜空中闪耀",
+    "希望你能去很多好玩的地方",
+    "希望你身体健康",
+    "希望你心想事成",
+    "希望你在自己感兴趣的领域里有美好的体验",
+    "希望你的未来如冬日暖阳般温暖、如锦绣繁花般绚烂",
+    "愿你遇到小小的好运",
+    "希望你每天下班都能开心度过夜晚的休闲时光"
+  ];
+
+  const TRIGGER_TEXT = "他变成了一颗星星，会永远在夜空中闪耀";
+
+  // 最后一封长信（替换成你的信即可，字数不限制）
+  const longLetter = `也许你说得对，我只不过是寂寞了需要陪伴的时候把你拉过来。我在日本孤独太久了，以至于你靠近我、给了我一些温暖，我就觉得自己喜欢你。
+那么究竟什么是喜欢呢，我好像变得不明白了。如果我们换个时间、换个场景认识，我还会喜欢你吗。会不会少了这些年龄差、异国、偶然相识、尚未见过面…等可以挑动人心的因素，我们就不会发生什么了。
+我们发生矛盾那两天，我在之前变得有些异常吧。我有情欲的时候，我想粘着你的时候。其实几个月来，我一直都在因为房子的贷款可能不能继续贷给我了的事而很压抑，一直用逃避来缓解它带给我的压力，而那两天，我知道裁判所的人要来我家实地考察，来准备进行拍卖手续了。我很害怕，也想大不了把它卖掉算了，反正我也不想在日本呆着了。但是这个事情一步步离我越来越近，还是让我很难受。
+对不起，我好像就是这样一个软弱的人。对不起，我挑动了你的情绪，又因为自己时不时不回复你而影响了你的心情。
+我想可能我现在还是不适合谈恋爱吧。我以为我是因为工作忙而没有心情、以为我是因为一些过去感情上的遭遇而不敢再触及亲密关系、以为我是生活中有种种这些客观现实而没有余力来好好和你经营感情…但也许事实是，我还没有把自己的感情好好沉淀，我还没有足够的勇气与爱的能力，这一切都是我自己主观的原因，而不是那些客观的东西。
+但是我很对不起你。你真的是一个很好很好的人，我相信即使不是因为我寂寞，我遇见你也会被你吸引，或者说，即使我可能现在没有足够的爱人的能力，我也因为你而一次又一次想要更努力一些。你和我畅想过的未来生活是真实而温暖的，是日常的一茶一饭，那简单的日常里有让我深深眷恋的感觉。你遇到问题的时候能用心和我说明白你的感受，让我觉得很安心。你总是能够陪伴我，给了我很多很多安慰。我真的很感谢你，也很喜欢你，我觉得遇见你真的是很好很幸运的事。
+谢谢你共情我的过去、我的情绪，谢谢你总是关心我的健康。对不起我在很多时候都没能给你足够的关怀与安全感，对不起我总是让你委屈。你真的很好很好，你真的值得拥有很多很多爱。
+你也注意身体，记得好好吃饭，少吃冰淇淋啦。
+祝你冬天快乐，以后的日子都幸福。
+`;
+
+  // ========= 逻辑部分 =========
+
+  const titles = ["温柔提示", "提醒", "消息", "便签", "叮咚"];
+
+  const rand = (min, max) => Math.random() * (max - min) + min;
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const clamp = (n, min, max) => Math.max(min, Math.min(n, max));
+
+  let topZ = 1000;
+  let letterShown = false;
+
+  // 洗牌：保证随机顺序且不重复
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i=a.length-1; i>0; i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  // 本轮短句队列：每条只用一次
+  let shortQueue = shuffle(shortMsgs);
+  function nextShort(){
+    return shortQueue.length ? shortQueue.shift() : null; // 用完就 null（不再重复）
+  }
+
+// === 画星空（一次性）start ===
+(function initStars(){
+  const c = document.getElementById("stars");
+  if(!c) return;
+  const ctx = c.getContext("2d");
+  function resize(){
+    c.width = window.innerWidth;
+    c.height = window.innerHeight;
+    draw();
+  }
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    const n = Math.floor((c.width*c.height)/9000); // 密度可调
+    for(let i=0;i<n;i++){
+      const x = Math.random()*c.width;
+      const y = Math.random()*c.height;
+      const r = Math.random()*1.2 + 0.2;
+      ctx.globalAlpha = Math.random()*0.8 + 0.1;
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(x,y,r,0,Math.PI*2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+  window.addEventListener("resize", resize);
+  resize();
+})();
+
+// --- 触发夜空 + 流星（只触发一次，可按需改） ---
+let nightTriggered = false;
+
+function triggerNightAndStar(){
+  if(nightTriggered) return;
+  nightTriggered = true;
+
+  document.body.classList.add("night-sky");
+
+  // 生成一颗流星
+  const star = document.createElement("div");
+  star.className = "shooting-star";
+
+  // 从右上随机一点位置开始
+  const startX = window.innerWidth + 200;
+  const startY = Math.random() * (window.innerHeight * 0.35) + 40;
+  star.style.left = startX + "px";
+  star.style.top  = startY + "px";
+
+  document.body.appendChild(star);
+  star.addEventListener("animationend", () => star.remove());
+}
+// === 画星空（一次性）end ===
+  
+function createPopup({text, kind="small"}){
+  const el = document.createElement("div");
+  el.className = `popup ${kind} ${kind==="letter" ? "floaty" : "pop-in"}`;
+
+  // 背景柔和色
+  el.style.background = pick(pastel);
+
+  // 把结构塞进去（防止黑屏）
+  const title = kind==="letter" ? "给你的一封信" : pick(titles);
+  el.innerHTML = `
+    <div class="bar">
+      <div class="title"><span class="dot"></span><span>${title}</span></div>
+      <button class="close" aria-label="close">×</button>
+    </div>
+    <div class="content"></div>
+  `;
+  el.querySelector(".content").textContent = text;
+
+  // 关键：短窗从很高的 z-index 开始，长信固定很低
+  if (kind === "letter") {
+    el.style.zIndex = "0";
+  } else {
+    el.style.zIndex = String(++topZ);
+  }
+
+  // 关键：长信插到 DOM 最前面（永远在最底层）
+  if (kind === "letter") {
+    document.body.insertBefore(el, document.body.firstChild);
+  } else {
+    document.body.appendChild(el);
+  }
+
+  // 位置：长信尽量居中，短窗随机
+  const pad = 12;
+  const rect = el.getBoundingClientRect();
+
+  let x, y;
+  if(kind === "letter"){
+    x = (window.innerWidth - rect.width) / 2;
+    y = clamp((window.innerHeight - rect.height) / 2, pad, window.innerHeight - rect.height - pad);
+  }else{
+    x = rand(pad, window.innerWidth - rect.width - pad);
+    y = rand(pad, window.innerHeight - rect.height - pad);
+  }
+  el.style.left = `${x}px`;
+  el.style.top  = `${y}px`;
+
+  // 置顶：短窗可置顶，长信不允许置顶（保持底层）
+  el.addEventListener("mousedown", () => {
+    if(kind !== "letter") el.style.zIndex = String(++topZ);
+  });
+
+  // 关闭
+  el.querySelector(".close").addEventListener("click", (e) => {
+    e.stopPropagation();
+    // 如果关闭的是触发句 → 夜空流星
+    if(kind === "small" && text === TRIGGER_TEXT){
+      triggerNightAndStar();
+    }
+    el.remove();
+  });
+
+  // 拖拽（标题栏）
+  const bar = el.querySelector(".bar");
+  let dragging = false;
+  let startX=0, startY=0, startLeft=0, startTop=0;
+
+  bar.addEventListener("mousedown", (e) => {
+    dragging = true;
+    bar.style.cursor = "grabbing";
+    if(kind !== "letter") el.style.zIndex = String(++topZ);
+
+    startX = e.clientX;
+    startY = e.clientY;
+    startLeft = parseFloat(el.style.left);
+    startTop  = parseFloat(el.style.top);
+    e.preventDefault();
+  });
+
+  window.addEventListener("mousemove", (e) => {
+    if(!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+
+    const r = el.getBoundingClientRect();
+    let nx = startLeft + dx;
+    let ny = startTop  + dy;
+
+    nx = clamp(nx, pad, window.innerWidth - r.width - pad);
+    ny = clamp(ny, pad, window.innerHeight - r.height - pad);
+
+    el.style.left = `${nx}px`;
+    el.style.top  = `${ny}px`;
+  });
+
+  window.addEventListener("mouseup", () => {
+    if(!dragging) return;
+    dragging = false;
+    bar.style.cursor = "grab";
+  });
+
+  return el;
+}
+
+
+  // === 主流程：短句（不重复）刷完 → 弹长信（底层） ===
+  // 初始先来一点短窗（不超过队列长度）
+  const initialCount = Math.min(10, shortMsgs.length);
+  for(let i=0;i<initialCount;i++){
+    const msg = nextShort();
+    if(msg) createPopup({text: msg, kind:"small"});
+  }
+
+  // 持续刷短窗，直到队列用完
+  const intervalMs = 160; // 密度：调小更爆
+  const timer = setInterval(() => {
+    if(letterShown) return;
+
+    const msg = nextShort();
+    if(msg){
+      createPopup({text: msg, kind:"small"});
+      return;
+    }
+
+    // 短句全部用完：停止刷短窗，弹出长信（但在底层）
+    clearInterval(timer);
+    letterShown = true;
+    createPopup({text: longLetter, kind:"letter"});
+  }, intervalMs);
+
+  // === 夜空流星逻辑 start ===
+  /* 夜空模式（触发后） */
+  body.night-sky{
+    background: radial-gradient(1100px 700px at 60% 25%, #0b1a3a, #05060d);
+  }
+
+  /* 星星层（可选，轻量） */
+  #stars{
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .6s ease;
+    z-index: 2; /* 在背景上，但在弹窗下（弹窗 z-index>=1000） */
+  }
+  body.night-sky #stars{ opacity: .55; }
+
+  /* 流星 */
+  .shooting-star{
+    position: fixed;
+    width: 220px;
+    height: 2px;
+    background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.95), rgba(255,255,255,0));
+    filter: drop-shadow(0 0 10px rgba(255,255,255,.55));
+    pointer-events: none;
+    z-index: 3;
+    transform: rotate(-18deg);
+    animation: shoot 1.1s ease-out forwards;
+  }
+
+  @keyframes shoot{
+    0%   { opacity: 0; transform: translate3d(0,0,0) rotate(-18deg); }
+    10%  { opacity: 1; }
+    100% { opacity: 0; transform: translate3d(-900px, 520px, 0) rotate(-18deg); }
+  }
+  // === 夜空流星逻辑 end ===
+  
+</script>
+</body>
+</html>
