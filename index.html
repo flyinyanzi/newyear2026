@@ -145,8 +145,12 @@
       width: 100%;
       height: 100%;
       pointer-events: none;
-      z-index: 4; /* 背景之上、弹窗之下（弹窗 z-index>=1000） */
+      z-index: 5; /* 平时很低 */
     }
+    #fx.on-top{
+      z-index: 50000; /* 触发时顶上去 */
+    }
+
     body.night-sky{ background: radial-gradient(1100px 700px at 60% 25%, #0b1a3a, #05060d); }
 
   </style>
@@ -263,6 +267,7 @@ let EFFECT_LOCK = false; // 防止同时触发多个
 
 // ===== Effect 01：夜空 + 流星 =====
 function triggerEffect_01(){
+  FX.c.classList.add("on-top");
   if(EFFECT_LOCK) return;
   EFFECT_LOCK = true;
 
@@ -329,7 +334,7 @@ function triggerEffect_01(){
     if(p < 1){
       requestAnimationFrame(frame);
     }else{
-      setTimeout(() => { FX.clear(); EFFECT_LOCK = false; }, 200);
+      setTimeout(() => { FX.clear(); FX.c.classList.remove("on-top"); EFFECT_LOCK = false; }, 200);
     }
   }
   requestAnimationFrame(frame);
@@ -337,6 +342,7 @@ function triggerEffect_01(){
 
 // ===== Effect 02：呼神护卫（雌鹿轮廓 + 粒子汇聚 + 发光）=====
 function triggerEffect_02(){
+  FX.c.classList.add("on-top");
   if(EFFECT_LOCK) return;
   EFFECT_LOCK = true;
 
@@ -522,7 +528,7 @@ function triggerEffect_02(){
         ctx.fillRect(0,0,W,H);
         ctx.globalAlpha = 1;
         if(pp < 1) requestAnimationFrame(fade);
-        else { FX.clear(); EFFECT_LOCK = false; }
+        else { FX.clear(); FX.c.classList.remove("on-top"); EFFECT_LOCK = false; }
       })(endStart);
     }
   }
