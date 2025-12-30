@@ -709,59 +709,39 @@ function triggerEffect_03(){
 
   // 画弯月：用“两个圆相减”的方式
   function drawCrescent(x, y, r, phase){
-    // phase: 0~1，越大越细
     ctx.save();
 
-    // 1) 先构造月牙路径：大圆 - 偏移小圆
+    // phase: 0~1，越大越细
     const offset = r * (0.55 + 0.35*phase);
 
-    // 用 Path2D 更干净
-    const outer = new Path2D();
-    outer.arc(x, y, r, 0, Math.PI*2);
-
-    const inner = new Path2D();
-    inner.arc(x + offset, y - r*0.08, r*0.98, 0, Math.PI*2);
-
-    // 2) 用 clip 做“月牙遮罩”（只允许在月牙区域绘制）
-    // 实现方式：先 clip 大圆，再用 destination-out 去掉内圆，再 clip 当前结果
-    ctx.save();
+    // === 1) 用 evenodd 裁出“月牙形状” ===
     ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI*2);
-    ctx.clip();
+    // 外圆
+    ctx.arc(x, y, r, 0, Math.PI*2, false);
+    // 内圆（反向）
+    ctx.arc(x + offset, y - r*0.08, r*0.98, 0, Math.PI*2, true);
+    // 关键：evenodd = 外圆 - 内圆
+    ctx.clip("evenodd");
 
-    // 把内圆区域“擦掉”，形成月牙
-    ctx.globalCompositeOperation = "destination-out";
-    ctx.beginPath();
-    ctx.arc(x + offset, y - r*0.08, r*0.98, 0, Math.PI*2);
-    ctx.fill();
-
-    // 现在画布只剩月牙可见区域：把 composite 复原，再 clip 一次保证后续都在月牙内
-    ctx.globalCompositeOperation = "source-over";
-    // 关键：用当前 alpha 结果再 clip（通过一次微透明填充固定遮罩）
-    ctx.globalCompositeOperation = "source-in";
-    ctx.fillStyle = "rgba(255,255,255,1)";
-    ctx.fillRect(0,0,window.innerWidth,window.innerHeight);
-
-    // 返回 source-over，并保持“月牙遮罩”效果
-    ctx.globalCompositeOperation = "source-over";
-    ctx.restore();
-
-    // 3) 在月牙遮罩内绘制：月光光晕 + 月面
+    // === 2) 在月牙区域内画月光 ===
     ctx.globalCompositeOperation = "lighter";
     ctx.globalAlpha = 0.9;
 
-    // 月光（只会出现在月牙里）
     const glowR = r * 2.4;
-    const rg = ctx.createRadialGradient(x, y, r*0.2, x, y, glowR);
+    const rg = ctx.createRadialGradient(
+      x, y, r*0.2,
+      x, y, glowR
+    );
     rg.addColorStop(0, "rgba(230,255,255,0.55)");
     rg.addColorStop(0.6, "rgba(180,230,255,0.18)");
     rg.addColorStop(1, "rgba(180,230,255,0)");
     ctx.fillStyle = rg;
+
     ctx.beginPath();
     ctx.arc(x, y, glowR, 0, Math.PI*2);
     ctx.fill();
 
-    // 月面实体（仍然只在月牙里）
+    // === 3) 月面实体（仍然被 clip 限制为月牙） ===
     ctx.globalCompositeOperation = "source-over";
     ctx.globalAlpha = 0.95;
     ctx.fillStyle = "rgba(245,255,255,0.95)";
