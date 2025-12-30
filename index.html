@@ -1343,17 +1343,22 @@ function triggerEffect_06(){
     ctx.scale(s,s);
     ctx.globalAlpha = a;
 
-    ctx.lineWidth = 6;
-    ctx.strokeStyle = "rgba(255,255,255,0.92)";
+    // ===== 基础参数 =====
+    const baseColor = "rgba(190,190,180,0.95)";   // 狸花底色（暖灰棕）
+    const stripeColor = "rgba(120,95,65,0.55)";   // 条纹深色
+    const outline = "rgba(255,255,255,0.92)";
 
-    // 头
-    ctx.fillStyle = "rgba(255,210,120,0.95)";
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = outline;
+
+    // ===== 头 =====
+    ctx.fillStyle = baseColor;
     ctx.beginPath();
     ctx.arc(0, 0, 48, 0, Math.PI*2);
     ctx.fill();
     ctx.stroke();
 
-    // 耳朵（三角）
+    // ===== 耳朵 =====
     function ear(ex,ey,flip){
       ctx.save();
       ctx.translate(ex,ey);
@@ -1365,7 +1370,8 @@ function triggerEffect_06(){
       ctx.fill();
       ctx.stroke();
 
-      ctx.fillStyle = "rgba(255,160,120,0.65)";
+      // 内耳
+      ctx.fillStyle = "rgba(240,170,160,0.55)";
       ctx.beginPath();
       ctx.moveTo(6*flip,-2);
       ctx.lineTo(16*flip,-16);
@@ -1373,21 +1379,53 @@ function triggerEffect_06(){
       ctx.closePath();
       ctx.fill();
       ctx.restore();
-      ctx.fillStyle = "rgba(255,210,120,0.95)";
+      ctx.fillStyle = baseColor;
     }
     ear(-22,-34,-1);
     ear( 22,-34, 1);
 
-    // 眼睛（更猫一点：椭圆）
+    // ===== 狸花条纹（头部）=====
+    ctx.strokeStyle = stripeColor;
+    ctx.lineWidth = 3.2;
+    ctx.lineCap = "round";
+
+    // 额头 M 纹
+    ctx.beginPath();
+    ctx.moveTo(-18,-22);
+    ctx.quadraticCurveTo(-8,-30, 0,-22);
+    ctx.quadraticCurveTo( 8,-30,18,-22);
+    ctx.stroke();
+
+    // 脸颊条纹
+    for(const side of [-1,1]){
+      ctx.beginPath();
+      ctx.moveTo(18*side, -8);
+      ctx.quadraticCurveTo(30*side, -4, 34*side, 2);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(16*side, 2);
+      ctx.quadraticCurveTo(28*side, 8, 32*side, 14);
+      ctx.stroke();
+    }
+
+    // ===== 眼睛 =====
     ctx.fillStyle = "rgba(30,30,35,0.9)";
     ctx.beginPath(); ctx.ellipse(-16,-6,6,4.6,0,0,Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.ellipse( 16,-6,6,4.6,0,0,Math.PI*2); ctx.fill();
 
-    // 鼻子
-    ctx.fillStyle = "rgba(255,120,150,0.85)";
-    ctx.beginPath(); ctx.arc(0, 6, 3.8, 0, Math.PI*2); ctx.fill();
+    // 眼睛高光
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.beginPath(); ctx.arc(-14,-8,2,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc( 18,-8,2,0,Math.PI*2); ctx.fill();
 
-    // 嘴
+    // ===== 鼻子 =====
+    ctx.fillStyle = "rgba(180,110,90,0.9)";
+    ctx.beginPath();
+    ctx.arc(0, 6, 3.8, 0, Math.PI*2);
+    ctx.fill();
+
+    // ===== 嘴 =====
     ctx.strokeStyle = "rgba(60,60,70,0.55)";
     ctx.lineWidth = 2.2;
     ctx.beginPath();
@@ -1397,7 +1435,7 @@ function triggerEffect_06(){
     ctx.quadraticCurveTo( 8, 18,  16, 12);
     ctx.stroke();
 
-    // 胡须
+    // ===== 胡须 =====
     ctx.globalAlpha = a*0.7;
     ctx.lineWidth = 2;
     for(const side of [-1,1]){
