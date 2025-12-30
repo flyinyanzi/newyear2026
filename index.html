@@ -209,6 +209,7 @@
   const TRIGGER_TEXT_03 = "祝愿你不用时刻坚强，也可以在长夜与黎明里守住一窗月光";
   const TRIGGER_TEXT_04 = "祝愿你每天都能看到蓝天白云以及壮丽的日落";
   const TRIGGER_TEXT_05 = "祝愿你的2026年如冬日暖阳般温暖、如锦绣繁花般绚烂";
+  const TRIGGER_TEXT_06 = "祝愿你在大人的世界里依然有一颗纯真的童心";
 
 
   // 最后一封长信（字数不限制）
@@ -1235,6 +1236,283 @@ function triggerEffect_05(){
   requestAnimationFrame(frame);
 }
 
+// ===== Effect 06：小兔小猫金鱼 =====
+function triggerEffect_06(){
+  if(EFFECT_LOCK) return;
+  EFFECT_LOCK = true;
+  FX.c.classList.add("on-top");
+
+  const ctx = FX.ctx;
+  const W = window.innerWidth, H = window.innerHeight;
+
+  const start = performance.now();
+  const durIn = 520;
+  const durHold = 2200;
+  const durOut = 680;
+  const total = durIn + durHold + durOut;
+
+  const clamp01 = x => Math.max(0, Math.min(1, x));
+  const easeOutBack = (t)=>{
+    const c1 = 1.70158, c3 = c1+1;
+    return 1 + c3*Math.pow(t-1,3) + c1*Math.pow(t-1,2);
+  };
+  const easeOutCubic = t => 1 - Math.pow(1-t, 3);
+
+  function drawStickerShadow(x,y,r,a){
+    ctx.save();
+    ctx.globalAlpha = 0.14 * a;
+    ctx.fillStyle = "rgba(0,0,0,1)";
+    ctx.beginPath();
+    ctx.ellipse(x, y + r*0.95, r*1.05, r*0.26, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // --- Q 版小兔 ---
+  function drawBunny(x,y,s,rot,a){
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.rotate(rot);
+    ctx.scale(s,s);
+    ctx.globalAlpha = a;
+
+    // 外圈白描边（更像头像贴纸）
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = "rgba(255,255,255,0.92)";
+
+    // 头
+    ctx.fillStyle = "rgba(255,230,240,0.95)";
+    ctx.beginPath();
+    ctx.arc(0, 0, 46, 0, Math.PI*2);
+    ctx.fill();
+    ctx.stroke();
+
+    // 耳朵
+    ctx.fillStyle = "rgba(255,230,240,0.95)";
+    const ear = (ex,ey,rx,ry,tilt)=>{
+      ctx.save();
+      ctx.translate(ex,ey);
+      ctx.rotate(tilt);
+      ctx.beginPath();
+      ctx.ellipse(0,0,rx,ry,0,0,Math.PI*2);
+      ctx.fill();
+      ctx.stroke();
+      // 内耳
+      ctx.fillStyle = "rgba(255,170,200,0.65)";
+      ctx.beginPath();
+      ctx.ellipse(0,0,rx*0.55,ry*0.65,0,0,Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+      ctx.fillStyle = "rgba(255,230,240,0.95)";
+    };
+    ear(-18,-58,16,42,-0.18);
+    ear( 18,-58,16,42, 0.18);
+
+    // 眼睛
+    ctx.fillStyle = "rgba(30,30,35,0.9)";
+    ctx.beginPath(); ctx.arc(-16,-6,5,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc( 16,-6,5,0,Math.PI*2); ctx.fill();
+    // 高光
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.beginPath(); ctx.arc(-14,-8,2,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc( 18,-8,2,0,Math.PI*2); ctx.fill();
+
+    // 鼻子 + 嘴
+    ctx.fillStyle = "rgba(255,120,150,0.85)";
+    ctx.beginPath();
+    ctx.arc(0, 6, 4.2, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.strokeStyle = "rgba(60,60,70,0.55)";
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(0, 10);
+    ctx.quadraticCurveTo(-8, 18, -16, 12);
+    ctx.moveTo(0, 10);
+    ctx.quadraticCurveTo( 8, 18,  16, 12);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  // --- Q 版小猫 ---
+  function drawCat(x,y,s,rot,a){
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.rotate(rot);
+    ctx.scale(s,s);
+    ctx.globalAlpha = a;
+
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = "rgba(255,255,255,0.92)";
+
+    // 头
+    ctx.fillStyle = "rgba(255,210,120,0.95)";
+    ctx.beginPath();
+    ctx.arc(0, 0, 48, 0, Math.PI*2);
+    ctx.fill();
+    ctx.stroke();
+
+    // 耳朵（三角）
+    function ear(ex,ey,flip){
+      ctx.save();
+      ctx.translate(ex,ey);
+      ctx.beginPath();
+      ctx.moveTo(0,0);
+      ctx.lineTo(18*flip,-26);
+      ctx.lineTo(32*flip,2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(255,160,120,0.65)";
+      ctx.beginPath();
+      ctx.moveTo(6*flip,-2);
+      ctx.lineTo(16*flip,-16);
+      ctx.lineTo(22*flip,0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+      ctx.fillStyle = "rgba(255,210,120,0.95)";
+    }
+    ear(-22,-34,-1);
+    ear( 22,-34, 1);
+
+    // 眼睛（更猫一点：椭圆）
+    ctx.fillStyle = "rgba(30,30,35,0.9)";
+    ctx.beginPath(); ctx.ellipse(-16,-6,6,4.6,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse( 16,-6,6,4.6,0,0,Math.PI*2); ctx.fill();
+
+    // 鼻子
+    ctx.fillStyle = "rgba(255,120,150,0.85)";
+    ctx.beginPath(); ctx.arc(0, 6, 3.8, 0, Math.PI*2); ctx.fill();
+
+    // 嘴
+    ctx.strokeStyle = "rgba(60,60,70,0.55)";
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(0, 10);
+    ctx.quadraticCurveTo(-8, 18, -16, 12);
+    ctx.moveTo(0, 10);
+    ctx.quadraticCurveTo( 8, 18,  16, 12);
+    ctx.stroke();
+
+    // 胡须
+    ctx.globalAlpha = a*0.7;
+    ctx.lineWidth = 2;
+    for(const side of [-1,1]){
+      ctx.beginPath();
+      ctx.moveTo(10*side, 10);
+      ctx.lineTo(34*side,  6);
+      ctx.moveTo(10*side, 14);
+      ctx.lineTo(34*side, 14);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = a;
+
+    ctx.restore();
+  }
+
+  // --- Q 版金鱼 ---
+  function drawGoldfish(x,y,s,rot,a){
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.rotate(rot);
+    ctx.scale(s,s);
+    ctx.globalAlpha = a;
+
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = "rgba(255,255,255,0.92)";
+
+    // 身体椭圆
+    ctx.fillStyle = "rgba(255,140,40,0.95)";
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 52, 38, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.stroke();
+
+    // 尾巴（扇形）
+    ctx.fillStyle = "rgba(255,90,40,0.85)";
+    ctx.beginPath();
+    ctx.moveTo(48, 0);
+    ctx.quadraticCurveTo(92, -36, 102, 0);
+    ctx.quadraticCurveTo(92,  36, 48, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // 背鳍
+    ctx.fillStyle = "rgba(255,180,120,0.55)";
+    ctx.beginPath();
+    ctx.moveTo(-8,-32);
+    ctx.quadraticCurveTo(10,-58, 30,-34);
+    ctx.quadraticCurveTo(8,-34, -8,-32);
+    ctx.closePath();
+    ctx.fill();
+
+    // 眼睛
+    ctx.fillStyle = "rgba(30,30,35,0.9)";
+    ctx.beginPath(); ctx.arc(-18,-6,4.6,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.beginPath(); ctx.arc(-16,-8,1.8,0,Math.PI*2); ctx.fill();
+
+    // 腮红点
+    ctx.fillStyle = "rgba(255,230,230,0.45)";
+    ctx.beginPath(); ctx.arc(-6, 10, 8, 0, Math.PI*2); ctx.fill();
+
+    ctx.restore();
+  }
+
+  function frame(now){
+    const elapsed = now - start;
+
+    // 总体 alpha
+    let a;
+    if(elapsed < durIn) a = easeOutCubic(elapsed/durIn);
+    else if(elapsed < durIn + durHold) a = 1;
+    else a = 1 - easeOutCubic((elapsed - durIn - durHold)/durOut);
+    a = clamp01(a);
+
+    FX.clear();
+
+    // 弹出 scale（有一点弹性）
+    const pop = elapsed < durIn ? clamp01(elapsed/durIn) : 1;
+    const s = elapsed < durIn ? easeOutBack(pop) : 1;
+
+    // 晃动（很轻微）
+    const wig = Math.sin((now - start)/220) * 0.06;      // 角度
+    const bob = Math.sin((now - start)/260) * 6;         // 上下
+
+    // 三个角色的位置（屏幕中间偏下）
+    const baseY = H * 0.56 + bob;
+    const gap = Math.min(W*0.22, 230);
+
+    const bunnyX = W*0.5 - gap;
+    const catX   = W*0.5;
+    const fishX  = W*0.5 + gap;
+
+    // 贴纸阴影
+    drawStickerShadow(bunnyX, baseY, 48, a);
+    drawStickerShadow(catX,   baseY, 48, a);
+    drawStickerShadow(fishX,  baseY, 48, a);
+
+    // 画三只（稍微错开晃动相位，显得更可爱）
+    drawBunny(bunnyX, baseY, 0.95*s, wig*0.9, a);
+    drawCat(  catX,   baseY, 0.98*s, -wig*0.7, a);
+    drawGoldfish(fishX, baseY, 0.92*s, wig*0.8, a);
+
+    if(elapsed < total){
+      requestAnimationFrame(frame);
+    }else{
+      FX.clear();
+      FX.c.classList.remove("on-top");
+      EFFECT_LOCK = false;
+    }
+  }
+
+  requestAnimationFrame(frame);
+}
+  
 // ===== Effect 花火：只剩贺卡时花火绽放 =====
 function triggerEffect_FIREWORKS(){
   if(EFFECT_LOCK) return;           // 如果你希望烟花不和别的特效抢锁，也可以不锁
@@ -1480,6 +1758,7 @@ function createPopup({text, kind="small"}){
       if(text === TRIGGER_TEXT_03) triggerEffect_03();
       if(text === TRIGGER_TEXT_04) triggerEffect_04();
       if(text === TRIGGER_TEXT_05) triggerEffect_05();
+      if(text === TRIGGER_TEXT_06) triggerEffect_06();
     }
     el.remove();
     maybeStartFireworks(); // 每次关闭检查是否只剩贺卡
