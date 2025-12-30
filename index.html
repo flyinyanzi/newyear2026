@@ -146,6 +146,7 @@
       height: 100%;
       pointer-events: none;
       z-index: 5; /* 平时很低 */
+      background: transparent;
     }
     #fx.on-top{
       z-index: 50000; /* 触发时顶上去 */
@@ -1311,11 +1312,13 @@ function triggerEffect_FIREWORKS(){
     else a = 1;
     a = clamp01(a);
 
-    // 清理但不完全清（轻微残影更像烟花）
-    ctx.globalAlpha = 0.18 * a;
-    ctx.fillStyle = "rgba(0,0,0,1)";
-    ctx.fillRect(0,0,W,H);
-    ctx.globalAlpha = 1;
+    // 透明拖尾：用清除 + 低透明度覆盖“擦掉上一帧”，但不加黑底
+    ctx.save();
+    ctx.globalCompositeOperation = "destination-out";
+    // 0.10~0.22：数值越大，拖尾越短；越小，残影越长
+    ctx.globalAlpha = 0.14 * a;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
 
     // 生成新烟花
     if(now >= nextSpawn && elapsed < total - 1300){
@@ -1348,7 +1351,7 @@ function triggerEffect_FIREWORKS(){
 
       // 闪烁 + 渐隐
       const twinkle = 0.6 + 0.4*Math.sin(now/80 * pt.tw + i);
-      const alpha = (1 - t) * a * twinkle;
+      const alpha = (1 - t) * a * twinkle * 1.15; // 让粒子更亮
 
       const [r,g,b] = pt.col;
       ctx.globalAlpha = alpha;
