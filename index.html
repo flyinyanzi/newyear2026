@@ -1384,30 +1384,44 @@ function triggerEffect_06(){
     ear(-22,-34,-1);
     ear( 22,-34, 1);
 
-    // ===== 狸花条纹（头部）=====
-    ctx.strokeStyle = stripeColor;
-    ctx.lineWidth = 3.2;
-    ctx.lineCap = "round";
+// ===== 狸花条纹（头部 · 可爱版）=====
+ctx.strokeStyle = stripeColor;
+ctx.lineWidth = 3.0;
+ctx.lineCap = "round";
 
-    // 额头 M 纹
-    ctx.beginPath();
-    ctx.moveTo(-18,-22);
-    ctx.quadraticCurveTo(-8,-30, 0,-22);
-    ctx.quadraticCurveTo( 8,-30,18,-22);
-    ctx.stroke();
+// —— 额头 M 纹（更挺拔，不下塌）——
+ctx.beginPath();
+ctx.moveTo(-18, -24);
+ctx.quadraticCurveTo(-10, -34, 0, -26);
+ctx.quadraticCurveTo( 10, -34, 18, -24);
+ctx.stroke();
 
-    // 脸颊条纹
-    for(const side of [-1,1]){
-      ctx.beginPath();
-      ctx.moveTo(18*side, -8);
-      ctx.quadraticCurveTo(30*side, -4, 34*side, 2);
-      ctx.stroke();
+// 中央竖纹（可选但很加分）
+ctx.beginPath();
+ctx.moveTo(0, -26);
+ctx.quadraticCurveTo(0, -18, 0, -12);
+ctx.stroke();
 
-      ctx.beginPath();
-      ctx.moveTo(16*side, 2);
-      ctx.quadraticCurveTo(28*side, 8, 32*side, 14);
-      ctx.stroke();
-    }
+// —— 脸颊条纹（向外 + 微微上扬）——
+for(const side of [-1, 1]){
+  // 上条纹：微笑感
+  ctx.beginPath();
+  ctx.moveTo(16*side, -6);
+  ctx.quadraticCurveTo(
+    28*side, -10,   // 控制点向上
+    34*side, -2     // 终点不再下垂
+  );
+  ctx.stroke();
+
+  // 下条纹：外扩但不下垂
+  ctx.beginPath();
+  ctx.moveTo(14*side, 4);
+  ctx.quadraticCurveTo(
+    26*side, 6,     // 几乎水平
+    32*side, 10
+  );
+  ctx.stroke();
+}
 
     // ===== 眼睛 =====
     ctx.fillStyle = "rgba(30,30,35,0.9)";
