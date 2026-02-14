@@ -154,6 +154,17 @@
 
     body.night-sky{ background: radial-gradient(1100px 700px at 60% 25%, #0b1a3a, #05060d); }
 
+    /* 给下一个要关闭的弹窗加高亮 */
+    @keyframes spotlightPulse {
+      0%   { transform: scale(1); box-shadow: 0 18px 40px rgba(0,0,0,.45); }
+      50%  { transform: scale(1.04); box-shadow: 0 28px 70px rgba(255,255,255,.35); }
+      100% { transform: scale(1); box-shadow: 0 18px 40px rgba(0,0,0,.45); }
+    }
+
+    .popup.highlight {
+      animation: spotlightPulse 0.9s ease-in-out 1;
+    }
+
   </style>
 </head>
 <body>
@@ -1845,7 +1856,7 @@ function triggerEffect_FIREWORKS(){
   requestAnimationFrame(frame);
 }
 
-
+// ===== Effect 结尾：关闭贺卡时出现的文字彩蛋 =====
 function triggerMoonEnding(){
   const container = document.getElementById("moon-ending");
   if(!container) return;
@@ -1858,15 +1869,59 @@ function triggerMoonEnding(){
   let i = 0;
   const tick = () => {
     if(i >= text.length){
-      // 字打完：触发你已有的“月光”特效（Effect 03）
-      triggerEffect_03();
+      // 字打完：触发结尾月色特效
+      triggerEndingMoon();
       return;
     }
     container.textContent += text[i];
     i++;
-    setTimeout(tick, 70); // 速度：50~90 自己调
+    setTimeout(tick, 70); // 速度：50~90 可调
   };
   tick();
+}
+
+// ===== Effect 结尾：随文字彩蛋出现的月色特效 =====
+function triggerEndingMoon(){
+  const ctx = FX.ctx;
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+
+  FX.c.classList.add("on-top");
+
+  const start = performance.now();
+  const duration = 1800;
+
+  function frame(t){
+    const p = Math.min(1, (t - start)/duration);
+
+    FX.clear();
+
+    ctx.globalAlpha = 0.5 * p;
+    ctx.fillStyle = "rgba(0,0,0,1)";
+    ctx.fillRect(0,0,W,H);
+
+    ctx.globalAlpha = p;
+
+    const x = W * 0.8;
+    const y = H * 0.2;
+    const r = Math.min(W,H)*0.08;
+
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI*2);
+    ctx.fillStyle = "rgba(255,255,230,0.9)";
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(x + r*0.6, y, r*0.95, 0, Math.PI*2);
+    ctx.fillStyle = "rgba(0,0,0,1)";
+    ctx.fill();
+
+    if(p < 1){
+      requestAnimationFrame(frame);
+    }
+  }
+
+  requestAnimationFrame(frame);
 }
 
 // ===== Effect End =====
@@ -1948,6 +2003,14 @@ function createPopup({text, kind="small"}){
       setTimeout(triggerMoonEnding, 300); // 稍微等一下更像“余韵”
     }
   });
+
+  // 给下一个要关闭的弹窗加高亮
+  if(kind === "small"){
+    el.classList.add("highlight");
+    setTimeout(() => {
+      el.classList.remove("highlight");
+    }, 900);
+  }
 
   // 拖拽（标题栏）
   const bar = el.querySelector(".bar");
