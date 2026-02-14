@@ -157,10 +157,10 @@
   </style>
 </head>
 <body>
-  <div class="hint">短句：随机顺序且不重复｜长信：最底层｜都可拖拽/关闭</div>
+  <!-- <div class="hint">短句：随机顺序且不重复｜长信：最底层｜都可拖拽/关闭</div> -->
   <canvas id="fx"></canvas>
   
-  <div id="countdown-container" style="
+  <!-- <div id="countdown-container" style="
     position: fixed;
     top: 50%;
     left: 50%;
@@ -177,67 +177,67 @@
     display: none;
   ">
     距离新年还有：<span id="countdown-text">--:--:--</span>
-  </div>
+  </div> -->
 
 <script>
 
-(function(){
-  const targetTime = new Date("2026-02-17T00:00:00+08:00").getTime(); // 大年初一零点（北京时间）
-  const now = Date.now();
+// (function(){
+//   const targetTime = new Date("2026-02-17T00:00:00+08:00").getTime(); // 大年初一零点（北京时间）
+//   const now = Date.now();
 
-  if (now < targetTime) {
-    document.getElementById("countdown-container").style.display = "block";
+//   if (now < targetTime) {
+//     document.getElementById("countdown-container").style.display = "block";
 
-    const updateCountdown = () => {
-      const now = Date.now();
-      const diff = targetTime - now;
+//     const updateCountdown = () => {
+//       const now = Date.now();
+//       const diff = targetTime - now;
 
-      if (diff <= 0) {
-        // 时间到：隐藏倒计时，执行原始页面逻辑
-        document.getElementById("countdown-container").remove();
-        startCard(); // ← 手动触发贺卡内容生成
-        return;
-      }
+//       if (diff <= 0) {
+//         // 时间到：隐藏倒计时，执行原始页面逻辑
+//         document.getElementById("countdown-container").remove();
+//         startCard(); // ← 手动触发贺卡内容生成
+//         return;
+//       }
 
-      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((diff / (1000 * 60)) % 60);
-      const seconds = Math.floor((diff / 1000) % 60);
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+//       const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+//       const minutes = Math.floor((diff / (1000 * 60)) % 60);
+//       const seconds = Math.floor((diff / 1000) % 60);
+//       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-      const padded = (n) => n.toString().padStart(2, '0');
-      document.getElementById("countdown-text").textContent = 
-        `${days}天 ${padded(hours)}:${padded(minutes)}:${padded(seconds)}`;
-    };
+//       const padded = (n) => n.toString().padStart(2, '0');
+//       document.getElementById("countdown-text").textContent = 
+//         `${days}天 ${padded(hours)}:${padded(minutes)}:${padded(seconds)}`;
+//     };
 
-    updateCountdown();
-    setInterval(updateCountdown, 1000);
-  } else {
-    startCard(); // 如果时间已过，立即加载贺卡
-  }
+//     updateCountdown();
+//     setInterval(updateCountdown, 1000);
+//   } else {
+//     startCard(); // 如果时间已过，立即加载贺卡
+//   }
 
-  // 将主流程的代码封装为函数，延迟触发
-  function startCard(){
-    // === 主流程：短句刷完 → 弹长信 ===
-    const initialCount = Math.min(10, shortMsgs.length);
-    for(let i=0;i<initialCount;i++){
-      const msg = nextShort();
-      if(msg) createPopup({text: msg, kind:"small"});
-    }
+//   // 将主流程的代码封装为函数，延迟触发
+//   function startCard(){
+//     // === 主流程：短句刷完 → 弹长信 ===
+//     const initialCount = Math.min(10, shortMsgs.length);
+//     for(let i=0;i<initialCount;i++){
+//       const msg = nextShort();
+//       if(msg) createPopup({text: msg, kind:"small"});
+//     }
 
-    const intervalMs = 160;
-    const timer = setInterval(() => {
-      if(letterShown) return;
-      const msg = nextShort();
-      if(msg){
-        createPopup({text: msg, kind:"small"});
-        return;
-      }
-      clearInterval(timer);
-      letterShown = true;
-      createPopup({text: longLetter, kind:"letter"});
-    }, intervalMs);
-  }
-})();
+//     const intervalMs = 160;
+//     const timer = setInterval(() => {
+//       if(letterShown) return;
+//       const msg = nextShort();
+//       if(msg){
+//         createPopup({text: msg, kind:"small"});
+//         return;
+//       }
+//       clearInterval(timer);
+//       letterShown = true;
+//       createPopup({text: longLetter, kind:"letter"});
+//     }, intervalMs);
+//   }
+// })();
 
   // ========= 编辑贺卡内容：短句 & 长信 =========
 
@@ -292,16 +292,16 @@
 
   // 最后一封长信（字数不限制）
   const longLetter = `
-2025年对我来说是充满迷雾的一年，生活中的、工作中的、关系中的。很多时候都是迷茫的，但又一直坚持信念而不愿随波逐流；去年还对AI抱有疑虑，而今年已在努力用AI平衡生活、加速工作；受困于关系，也在关系中获得宁静与安慰、获得力量。
+去年对我来说是充满迷雾的一年，生活中的、工作中的、关系中的。很多时候都是迷茫的，但又一直坚持信念而不愿随波逐流；去年还对AI抱有疑虑，而今年已在努力用AI平衡生活、加速工作；受困于关系，也在关系中获得宁静与安慰、获得力量。
 也渐渐发现，在结果揭晓之前，永远无法知道答案。只能亲自去经历这些或许困难的、狼狈的解决过程，然后在不知不觉中发现答案已逐渐清晰。
 
-所以年末不是结束，而是新的开始。
+所以大概岁末不是结束，而是新的开始。
 未来的一切都是未知的，但点亮黑暗的不一定是阳光，也可以是内心的火光。
 
 我感受你的困惑，也祝愿你迈步前行；也许会在岸边逡巡，祝愿你能够被云霞日光与月色抚慰；也许会犹豫不决，也祝愿你勇敢抉择；也许兵荒马乱，也祝愿你汇聚千军万马。
 
 不管我们此刻身在怎样的距离，我都希望你在新的一年能被温柔包围，幸福美满，也能无忧无惧，坚守自己的力量～
-新年快乐！
+新春快乐！
 
 。
 `;
