@@ -169,7 +169,8 @@
       transition: transform .25s ease, box-shadow .25s ease;
     }
     .popup.highlight{
-      transform: scale(1.08);
+      /* 让聚光灯效果更强烈（1.12） */
+      transform: scale(1.12);
       box-shadow:
       0 0 60px rgba(255,255,255,.8),
       0 0 120px rgba(255,255,255,.4),
@@ -2111,7 +2112,10 @@ function highlightTopPopup(){
   }
 
   // 所有短弹窗加载完后，调用给当前最上层弹窗加高亮
-  highlightTopPopup();
+  setTimeout(() => {
+    highlightTopPopup();
+  }, 350);
+
 
   // 持续刷短窗，直到队列用完
   const intervalMs = 160; // 密度：调小更爆
